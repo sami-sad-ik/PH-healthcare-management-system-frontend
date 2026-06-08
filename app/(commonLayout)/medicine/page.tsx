@@ -7,6 +7,4 @@ const MedicinePage = () => {
     );
 };
 
-
-
 export default MedicinePage;

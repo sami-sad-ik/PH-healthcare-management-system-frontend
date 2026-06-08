@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "PH Healthcare Management System",
-  description: "A healthcare management system built with Next.js, TypeScript, and Tailwind CSS.",
+  description:
+    "A healthcare management system built with Next.js, TypeScript, and Tailwind CSS.",
 };
 
 export default function RootLayout({
@@ -25,9 +26,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col">
+        <p>Root Layout</p>
+        {children}
+      </body>
     </html>
   );
 }
