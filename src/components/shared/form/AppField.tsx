@@ -1,4 +1,5 @@
-import { cn } from "@/src/lib/utils";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { AnyFieldApi } from "@tanstack/react-form";
 import React from "react";
 
@@ -48,11 +49,11 @@ const AppField = ({
       </label>
       <div className="relative">
         {prepend && (
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none z-10">
+          <div className="absolute inset-y-0 left-0 items-center pl-3 z-10">
             {prepend}
           </div>
         )}
-        <input
+        <Input
           id={field.name}
           name={field.name}
           type={type}
@@ -70,7 +71,7 @@ const AppField = ({
           )}
         />
         {append && (
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none z-10">
+          <div className="absolute inset-y-0 right-0 items-center pr-3 z-10">
             {append}
           </div>
         )}
