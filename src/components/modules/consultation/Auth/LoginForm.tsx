@@ -125,7 +125,10 @@ const LoginForm = () => {
           <form.Subscribe
             selector={(s) => [s.canSubmit, s.isSubmitting] as const}>
             {([canSubmit, isSubmitting]) => (
-              <AppSubmitButton isPending={isSubmitting} disabled={!canSubmit}>
+              <AppSubmitButton
+                isPending={isSubmitting || isPending}
+                pendingLabel="Logging In..."
+                disabled={!canSubmit}>
                 Log In
               </AppSubmitButton>
             )}
@@ -147,7 +150,7 @@ const LoginForm = () => {
           onClick={() => {
             const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
             //todo : redirect path after login in frontend
-            window.location.href = `${baseUrl}/google/login`;
+            window.location.href = `${baseUrl}/auth/google/login`;
           }}>
           <svg
             xmlns="http://www.w3.org/2000/svg"
