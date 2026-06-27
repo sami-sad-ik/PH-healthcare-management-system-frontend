@@ -40,7 +40,7 @@ export const loginAction = async (
 
     if (!emailVerified) {
       redirect("/verify-email");
-    } else if (!needPasswordChange) {
+    } else if (needPasswordChange) {
       redirect(`reset-password?email=${email}`);
     } else {
       const targetPath =
