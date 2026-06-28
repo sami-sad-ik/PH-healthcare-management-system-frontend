@@ -6,6 +6,24 @@ import {
   isAuthRoute,
   UserRole,
 } from "./lib/authUtils";
+import {
+  getNewTokensWithRefreshToken,
+  getUserInfo,
+} from "./services/auth.service";
+import { isTokenExpiringSoon } from "./lib/tokenUtils";
+
+export const refreshTokenMiddleware = async (
+  token: string,
+): Promise<boolean> => {
+  try {
+    const refresh = await getNewTokensWithRefreshToken(token);
+    if (!refresh) return false;
+    return true;
+  } catch (error) {
+    console.log("Error refreshing token", error);
+    return false;
+  }
+};
 
 export const proxy = async (request: NextRequest) => {
   try {
@@ -30,32 +48,85 @@ export const proxy = async (request: NextRequest) => {
     const routeOwner = getRouteOwner(pathname);
     const unifySuperAdminAndAdminRole =
       userRole === "SUPER_ADMIN" ? "ADMIN" : userRole;
-    const isAuth = unifySuperAdminAndAdminRole;
+    userRole = unifySuperAdminAndAdminRole;
+    const isAuth = isAuthRoute(pathname);
+
+    //proactively refresh token if refresh token exists and access token is expired or about to expire
+    if (
+      isValidAccessToken &&
+      refreshToken &&
+      (await isTokenExpiringSoon(accessToken as string))
+    ) {
+      const requestHeaders = new Headers(request.headers);
+      const response = NextResponse.next({
+        request: { headers: requestHeaders },
+      });
+      try {
+        const refreshed = await refreshTokenMiddleware(refreshToken);
+        if (refreshed) {
+          requestHeaders.set("x-token-refreshed", "1");
+        }
+
+        return NextResponse.next({
+          request: { headers: requestHeaders },
+          headers: response.headers,
+        });
+      } catch (error) {
+        console.log("Error refreshing token", error);
+      }
+    }
+
     //rule 1 : user is logged in and trying to access auth routes -> don't allow
-    if (isAuth && isValidAccessToken && isAuthRoute(pathname)) {
-      //  isAuthRoute is not used by my mentor
+    if (isAuth && isValidAccessToken) {
       return NextResponse.redirect(
         new URL(getDefaultDashboardRoute(userRole as UserRole), request.url),
       );
     }
-    //rule 2 : user trying to access public routes -> allow
+
+    //rule 2 : user trying to access reset-password
+    if (pathname === "reset-password") {
+      const email = request.nextUrl.searchParams.get("email");
+      //case 1 : user has needPasswordChange true
+      if (accessToken && email) {
+        const userInfo = await getUserInfo();
+        if (userInfo.needPasswordChange) {
+          return NextResponse.next();
+        } else {
+          return NextResponse.redirect(
+            new URL(
+              getDefaultDashboardRoute(userRole as UserRole),
+              request.url,
+            ),
+          );
+        }
+      }
+      //case 2 : user coming from forgot password
+      if (email) {
+        return NextResponse.next();
+      }
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    //rule 3 : user trying to access public routes -> allow
     if (routeOwner === null) {
       return NextResponse.next();
     }
 
-    //rule 3 : user has no access token and trying to access private route -> redirect to login page
+    //rule 4 : user has no access token and trying to access private route -> redirect to login page
     if (!isValidAccessToken) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }
 
-    //rule 4 : user has access token and trying to access common protected route -> allow
+    //rule 5 : user has access token and trying to access common protected route -> allow
     if (routeOwner === "COMMON") {
       return NextResponse.next();
     }
 
-    //rule 5 : user tries to access role based protected route but doesn't have required role -> redirect to default dashboard
+    //rule 6 : user tries to access role based protected route but doesn't have required role -> redirect to default dashboard
     if (
       routeOwner === "ADMIN" ||
       routeOwner === "DOCTOR" ||

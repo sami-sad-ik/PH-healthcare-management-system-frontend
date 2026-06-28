@@ -1,10 +1,13 @@
 "use server";
 
 import { setTokenInCookies } from "@/lib/tokenUtils";
+import { cookies } from "next/headers";
 
 const BASE_API_URL = process.env.NEXT_PUBLIC_BASE_API_URL;
 
-export const refreshToken = async (refreshToken: string): Promise<boolean> => {
+export const getNewTokensWithRefreshToken = async (
+  refreshToken: string,
+): Promise<boolean> => {
   try {
     const res = await fetch(`${BASE_API_URL}/auth/refresh-token`, {
       method: "POST",
@@ -30,4 +33,19 @@ export const refreshToken = async (refreshToken: string): Promise<boolean> => {
     console.log(`Error occured in refreshing token`, error);
     return false;
   }
+};
+
+export const getUserInfo = async () => {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
+  const res = await fetch(`${BASE_API_URL}/auth/me`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Cookie: `accessToken=${accessToken}`,
+    },
+  });
+  if (!res.ok) return null;
+  const { data } = await res.json();
+  return data;
 };
