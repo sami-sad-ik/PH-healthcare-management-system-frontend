@@ -38,6 +38,7 @@ export const getNewTokensWithRefreshToken = async (
 export const getUserInfo = async () => {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
+  if (!accessToken) return null;
   const res = await fetch(`${BASE_API_URL}/auth/me`, {
     method: "GET",
     headers: {

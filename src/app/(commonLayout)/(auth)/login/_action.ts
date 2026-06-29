@@ -32,15 +32,17 @@ export const loginAction = async (
       parsesdPayload.data,
     );
     const { accessToken, refreshToken, token, user } = response.data;
-    const { role, email, needPasswordChange, emailVerified } = user;
+    const { role, email, needPasswordChange } = user;
 
     await setTokenInCookies("accessToken", accessToken);
     await setTokenInCookies("refreshToken", refreshToken);
     await setTokenInCookies("better-auth.session_token", token, 24 * 60 * 60);
 
-    if (!emailVerified) {
-      redirect("/verify-email");
-    } else if (needPasswordChange) {
+    // if (!emailVerified) {
+    //   redirect("/verify-email");
+    // }  // this should be done in catch
+
+    if (needPasswordChange) {
       redirect(`reset-password?email=${email}`);
     } else {
       const targetPath =
@@ -58,6 +60,14 @@ export const loginAction = async (
       error.digest.startsWith("NEXT_REDIRECT")
     ) {
       throw error;
+    }
+    if (
+      error &&
+      error?.response &&
+      error?.response?.data?.message ===
+        "Email not verified. A new OTP has been sent to your email."
+    ) {
+      return redirect(`/verify-email?email=${payload.email}`);
     }
     return {
       success: false,
