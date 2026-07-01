@@ -5,7 +5,6 @@ export default function CommonProtectedLayout({
 }>) {
   return (
     <>
-      <p>Common Protected Layout</p>
       {children}
     </>
   );

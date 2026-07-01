@@ -124,6 +124,21 @@ export const proxy = async (request: NextRequest) => {
     //rule 5 : enforcing to reset-password if needPasswordChange is true
     if (accessToken) {
       const userInfo = await getUserInfo();
+
+      if (userInfo.emailVerified === false) {
+        if (pathname !== "/verify-email") {
+          const verifyEmailUrl = new URL("/verify-email", request.url);
+          verifyEmailUrl.searchParams.set("email", userInfo.email);
+          return NextResponse.redirect(verifyEmailUrl);
+        }
+        return NextResponse.next();
+      }
+      if (userInfo.emailVerified && pathname === "/verify-email") {
+        return NextResponse.redirect(
+          new URL(getDefaultDashboardRoute(userRole as UserRole), request.url),
+        );
+      }
+
       if (userInfo.needPasswordChange) {
         if (pathname !== "/reset-password") {
           const resetPasswordUrl = new URL("/reset-password", request.url);
