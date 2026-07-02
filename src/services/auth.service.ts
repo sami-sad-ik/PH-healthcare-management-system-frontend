@@ -3,7 +3,7 @@
 import { setTokenInCookies } from "@/lib/tokenUtils";
 import { cookies } from "next/headers";
 
-const BASE_API_URL = process.env.NEXT_PUBLIC_BASE_API_URL;
+const BASE_API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export const getNewTokensWithRefreshToken = async (
   refreshToken: string,
@@ -38,12 +38,13 @@ export const getNewTokensWithRefreshToken = async (
 export const getUserInfo = async () => {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
+  const sessionToken = cookieStore.get("better-auth.session_token")?.value;
   if (!accessToken) return null;
   const res = await fetch(`${BASE_API_URL}/auth/me`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      Cookie: `accessToken=${accessToken}`,
+      Cookie: `accessToken=${accessToken} ; better-auth.session_token=${sessionToken}`,
     },
   });
   if (!res.ok) return null;

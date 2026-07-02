@@ -1,8 +1,10 @@
+"use client";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getIconComponent } from "@/lib/iconMapper";
 import { cn } from "@/lib/utils";
 import { NavSection } from "@/types/navItems.types";
 import { UserInfo } from "@/types/user.types";
-import { Home } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -40,7 +42,7 @@ const DashboardSidebarContent = ({
               <div className="space-y-1">
                 {section.items.map((item, itemId) => {
                   const isActive = pathname === item.href;
-                  // const Icon = <Icon/>
+                  const Icon = getIconComponent(item.icon);
                   return (
                     <Link
                       key={`${sectionId}-${itemId}`}
@@ -51,7 +53,7 @@ const DashboardSidebarContent = ({
                           ? "bg-primary text-primary-foreground"
                           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                       )}>
-                      <Home />
+                      <Icon />
                       <span>{item.title}</span>
                     </Link>
                   );
