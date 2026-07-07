@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bell, Calendar, CheckCircle, Clock, UserPlus } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
 interface INotification {
   id: string;
@@ -109,6 +112,48 @@ const NotificationDropdown = () => {
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <ScrollArea className="h-75">
+          {MOCK_NOTIFICATIONS.length > 0 ? (
+            MOCK_NOTIFICATIONS.map((notification) => (
+              <DropdownMenuItem
+                key={notification.id}
+                className="flex flex-col items-start gap-2 p-3 cursor-pointer">
+                <div className="mt-0.5">
+                  {getNotificationIcon(notification.type)}
+                </div>
+
+                <div className="flex space-y-1">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm font-medium leading-none">
+                      {notification.title}
+                    </p>
+                    {!notification.read && (
+                      <div className="w-2 h-2 rounded-full bg-blue-700" />
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground line-clamp-2">
+                    {notification.message}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(notification.timeStamp, {
+                      addSuffix: true,
+                    })}
+                  </p>
+                </div>
+              </DropdownMenuItem>
+            ))
+          ) : (
+            <div className="p-6 text-center text-sm text-muted-foreground">
+              No Notificatons
+            </div>
+          )}
+        </ScrollArea>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem className="justify-center items-center cursor-pointer">
+          View All Notifications
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

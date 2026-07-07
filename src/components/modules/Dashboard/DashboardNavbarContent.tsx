@@ -8,6 +8,8 @@ import { Menu, Search } from "lucide-react";
 import { useState } from "react";
 import DashboardMobileSidebar from "./DashboardMobileSidebar";
 import { Input } from "@/components/ui/input";
+import NotificationDropdown from "./NotificationDropdown";
+import UserDropdown from "./UserDropdown";
 
 interface DashboardNavbarContentProps {
   userInfo: UserInfo;
@@ -50,6 +52,10 @@ const DashboardNavbarContent = ({
       {/* right side actions */}
 
       {/* notifications */}
+      <NotificationDropdown />
+
+      {/* user dropdown */}
+      <UserDropdown userInfo={userInfo} />
     </div>
   );
 };
