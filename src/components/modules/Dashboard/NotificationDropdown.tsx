@@ -6,7 +6,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -103,38 +102,38 @@ const NotificationDropdown = () => {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Notidications</span>
+        <div className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-muted-foreground">
+          <span>Notifications</span>
           {unreadCount > 0 && (
             <Badge variant={"secondary"} className="ml-2">
               {unreadCount}
             </Badge>
           )}
-        </DropdownMenuLabel>
+        </div>
         <DropdownMenuSeparator />
-        <ScrollArea className="h-75">
+        <ScrollArea className="h-72">
           {MOCK_NOTIFICATIONS.length > 0 ? (
             MOCK_NOTIFICATIONS.map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
-                className="flex flex-col items-start gap-2 p-3 cursor-pointer">
-                <div className="mt-0.5">
+                className="flex cursor-pointer gap-3 rounded-lg px-3 py-3 hover:bg-muted">
+                <div className="mt-1">
                   {getNotificationIcon(notification.type)}
                 </div>
 
-                <div className="flex space-y-1">
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm font-medium leading-none">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-sm font-semibold text-foreground truncate">
                       {notification.title}
                     </p>
                     {!notification.read && (
-                      <div className="w-2 h-2 rounded-full bg-blue-700" />
+                      <span className="mt-1 h-2 w-2 rounded-full bg-blue-700" />
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground line-clamp-2">
+                  <p className="mt-1 text-sm leading-5 text-muted-foreground line-clamp-2">
                     {notification.message}
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="mt-2 text-xs text-muted-foreground">
                     {formatDistanceToNow(notification.timeStamp, {
                       addSuffix: true,
                     })}
@@ -144,7 +143,7 @@ const NotificationDropdown = () => {
             ))
           ) : (
             <div className="p-6 text-center text-sm text-muted-foreground">
-              No Notificatons
+              No Notifications
             </div>
           )}
         </ScrollArea>
@@ -152,7 +151,7 @@ const NotificationDropdown = () => {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem className="justify-center items-center cursor-pointer">
-          View All Notifications
+          <span className="w-full text-center">View All Notifications</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -3,7 +3,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -18,18 +17,21 @@ interface UserDropdownProps {
 const UserDropdown = ({ userInfo }: UserDropdownProps) => {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Button
-          variant="outline"
-          size="icon"
-          className="rounded-full w-8 h-8 p-0">
-          <span className="text-sm font-semibold">
-            {userInfo.name.charAt(0).toUpperCase()}
-          </span>
-        </Button>
-      </DropdownMenuTrigger>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full w-8 h-8 p-0">
+            <span className="text-sm font-semibold">
+              {userInfo.name.charAt(0).toUpperCase()}
+            </span>
+          </Button>
+        }
+      />
+
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>
+        <div className="px-4 py-2 text-xs text-muted-foreground">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium">{userInfo.name}</p>
             <p className="text-xs text-muted-foreground">{userInfo.email}</p>
@@ -37,22 +39,18 @@ const UserDropdown = ({ userInfo }: UserDropdownProps) => {
               {userInfo.role.replace("_", " ")}
             </p>
           </div>
-        </DropdownMenuLabel>
+        </div>
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem>
-          <Link href={"my-profile"}>
-            <User className="w-4 h-4 mr-2" />
-            My Profile
-          </Link>
+        <DropdownMenuItem render={<Link href="/my-profile" />}>
+          <User className="w-4 h-4 mr-2" />
+          My Profile
         </DropdownMenuItem>
 
-        <DropdownMenuItem>
-          <Link href={"change-password"} className="w-4 h-4 mr-2">
-            <Key className="w-4 h-4 mr-2" />
-            Change Password
-          </Link>
+        <DropdownMenuItem render={<Link href="/change-password" />}>
+          <Key className="w-4 h-4 mr-2" />
+          Change Password
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
