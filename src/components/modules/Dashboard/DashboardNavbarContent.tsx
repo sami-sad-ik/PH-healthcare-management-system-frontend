@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { NavSection } from "@/types/navItems.types";
 import { UserInfo } from "@/types/user.types";
 import { Menu, Search } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -10,6 +9,7 @@ import DashboardMobileSidebar from "./DashboardMobileSidebar";
 import { Input } from "@/components/ui/input";
 import NotificationDropdown from "./NotificationDropdown";
 import UserDropdown from "./UserDropdown";
+import { NavSection } from "@/types/dashboard.types";
 
 interface DashboardNavbarContentProps {
   userInfo: UserInfo;

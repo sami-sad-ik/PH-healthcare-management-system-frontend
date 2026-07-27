@@ -1,4 +1,4 @@
-import { NavSection } from "@/types/navItems.types";
+import { NavSection } from "@/types/dashboard.types";
 import { getDefaultDashboardRoute, UserRole } from "./authUtils";
 
 export const getCommonNavItems = (role: UserRole): NavSection[] => {

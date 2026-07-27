@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { SheetTitle } from "@/components/ui/sheet";
 import { getIconComponent } from "@/lib/iconMapper";
 import { cn } from "@/lib/utils";
-import { NavSection } from "@/types/navItems.types";
+import { NavSection } from "@/types/dashboard.types";
 import { UserInfo } from "@/types/user.types";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
