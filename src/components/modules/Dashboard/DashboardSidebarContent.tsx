@@ -33,7 +33,7 @@ const DashboardSidebarContent = ({
       {/* navigation items */}
       <ScrollArea>
         <nav className="space-y-6 px-3 py-4">
-          {navItems.map((section, sectionId) => (
+          {navItems?.map((section, sectionId) => (
             <div key={sectionId} className="space-y-2">
               {section.title && (
                 <h4 className="px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
