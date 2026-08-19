@@ -19,9 +19,7 @@ import {
 const DoctorsTable = () => {
   const doctorColumns = [
     { accessorKey: "name", header: "Name" },
-    { accessorKey: "specialization", header: "Specialization" },
     { accessorKey: "experience", header: "Experience" },
-    { accessorKey: "rating", header: "Rating" },
   ];
 
   const { data: doctorDataResponse } = useQuery({

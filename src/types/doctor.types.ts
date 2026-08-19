@@ -1,7 +1,29 @@
+enum Gender {
+  MALE = "MALE",
+  FEMALE = "FEMALE",
+}
+
 export interface IDoctor {
   id: number;
   name: string;
-  specialization: string;
-  experience: number;
-  rating: number;
+  email: string;
+  profilePhoto?: string;
+  contactNumber?: string;
+  address?: string;
+  registrationNumber: string;
+  gender: Gender;
+  appointmentFee: number;
+  qualification: string;
+  experience?: number;
+  currentWorkingPlace: string;
+  designation: string;
+  specialities: Array<{
+    specialityId: string;
+    doctorId: string;
+    speciality: {
+      id: string;
+      title: string;
+      icon: string;
+    };
+  }>;
 }
