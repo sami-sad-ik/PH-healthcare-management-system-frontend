@@ -6,7 +6,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   ColumnDef,
+  flexRender,
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -74,12 +83,69 @@ const DataTable = <TData,>({
       ]
     : columns;
 
-  const table = useReactTable({
+  const { getHeaderGroups, getRowModel } = useReactTable({
     data,
     columns: tableColumns,
     getCoreRowModel: getCoreRowModel(),
   });
-  return <div></div>;
+  return (
+    <div className="relative">
+      {isLoading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50">
+          <span className="text-gray-500">Loading...</span>
+        </div>
+      )}
+      {/* table */}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            {getHeaderGroups().map((hg) => {
+              return (
+                <TableRow key={hg.id}>
+                  {hg.headers.map(
+                    (
+                      header, // map over the hg headers array
+                    ) => (
+                      <TableHead key={header.id}>
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                      </TableHead>
+                    ),
+                  )}
+                </TableRow>
+              );
+            })}
+          </TableHeader>
+          <TableBody>
+            {getRowModel().rows.length ? (
+              getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={tableColumns.length}
+                  className="h-24 text-center">
+                  {emptyMessage || "No data available."}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
 };
 
 export default DataTable;
