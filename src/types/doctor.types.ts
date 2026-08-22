@@ -15,8 +15,10 @@ export interface IDoctor {
   appointmentFee: number;
   qualification: string;
   experience?: number;
+  averageRating: number;
   currentWorkingPlace: string;
   designation: string;
+  createdAt: Date;
   specialities: Array<{
     specialityId: string;
     doctorId: string;

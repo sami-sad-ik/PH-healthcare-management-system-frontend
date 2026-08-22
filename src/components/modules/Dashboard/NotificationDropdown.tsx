@@ -88,8 +88,9 @@ const NotificationDropdown = () => {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Button variant={"outline"} size={"icon"} className="relative">
+      <DropdownMenuTrigger
+        render={
+          <Button variant={"outline"} size={"icon"} className="relative">
           <Bell className="w-5 h-5" />
           <Badge
             className="w-5 h-5 absolute -top-1 -right-1 rounded-full p-0 flex justify-center items-center"
@@ -98,8 +99,9 @@ const NotificationDropdown = () => {
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           </Badge>
-        </Button>
-      </DropdownMenuTrigger>
+          </Button>
+        }
+      />
 
       <DropdownMenuContent align="end" className="w-80">
         <div className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-muted-foreground">

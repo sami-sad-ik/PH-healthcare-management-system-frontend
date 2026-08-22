@@ -4,12 +4,13 @@ import DataTable from "@/components/shared/table/DataTable";
 import { getDoctors } from "@/services/doctor.service";
 import { IDoctor } from "@/types/doctor.types";
 import { useQuery } from "@tanstack/react-query";
+import { doctorColumns } from "./doctorsColumns";
 
 const DoctorsTable = () => {
-  const doctorColumns = [
-    { accessorKey: "name", header: "Name" },
-    { accessorKey: "experience", header: "Experience" },
-  ];
+  // const doctorColumns = [
+  //   { accessorKey: "name", header: "Name" },
+  //   { accessorKey: "experience", header: "Experience" },
+  // ];
 
   const { data: doctorDataResponse, isLoading } = useQuery({
     queryKey: ["doctors"],
