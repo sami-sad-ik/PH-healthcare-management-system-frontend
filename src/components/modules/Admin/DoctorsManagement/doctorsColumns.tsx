@@ -1,10 +1,51 @@
 import Datecell from "@/components/shared/cell/Datecell";
+import StatusBadgeCell from "@/components/shared/cell/StatusBadgeCell";
+import UserInfoCell from "@/components/shared/cell/UserInfoCell";
+import { Badge } from "@/components/ui/badge";
 import { IDoctor } from "@/types/doctor.types";
 import { ColumnDef } from "@tanstack/react-table";
 import { Star } from "lucide-react";
 
 export const doctorColumns: ColumnDef<IDoctor>[] = [
-  { id: "name", accessorKey: "name", header: "Name" },
+  {
+    id: "name",
+    accessorKey: "name",
+    header: "Doctor",
+    cell: ({ row }) => (
+      <UserInfoCell
+        name={row.original.name}
+        email={row.original.email}
+        profilePhoto={row.original.profilePhoto}
+      />
+    ),
+  },
+  {
+    id: "specialities",
+    accessorKey: "specialities",
+    header: "Specialities",
+    cell: ({ row }) => {
+      const specialities = row.original.specialities;
+      if (!specialities || specialities.length === 0) {
+        return (
+          <span className="text-xs text-muted-foreground">
+            No specialities found
+          </span>
+        );
+      }
+      return (
+        <div>
+          {specialities.map((speciality, id) => {
+            const title = speciality.speciality.title || "N/A";
+            return (
+              <Badge variant={"secondary"} key={id}>
+                {title}
+              </Badge>
+            );
+          })}
+        </div>
+      );
+    },
+  },
   {
     id: "contactNumber",
     accessorKey: "contactNumber",
@@ -43,7 +84,7 @@ export const doctorColumns: ColumnDef<IDoctor>[] = [
       <div className="flex items-center gap-1">
         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
         <span className="text-sm font-medium">
-          {row.original?.appointmentFee.toFixed(1) ?? "0.0"}
+          {row.original?.averageRating.toFixed(1) ?? "0.0"}
         </span>
       </div>
     ),
@@ -57,6 +98,12 @@ export const doctorColumns: ColumnDef<IDoctor>[] = [
         {row.original?.gender.toLowerCase()}
       </span>
     ),
+  },
+  {
+    id: "status",
+    accessorKey: "user.status",
+    header: "Status",
+    cell: ({ row }) => <StatusBadgeCell status={row.original.user.status} />,
   },
   {
     id: "createdAt",

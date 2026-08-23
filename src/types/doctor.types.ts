@@ -3,6 +3,12 @@ enum Gender {
   FEMALE = "FEMALE",
 }
 
+export enum UserStatus {
+  ACTIVE = "ACTIVE",
+  BLOCKED = "BLOCKED",
+  DELETED = "DELETED",
+}
+
 export interface IDoctor {
   id: number;
   name: string;
@@ -19,6 +25,9 @@ export interface IDoctor {
   currentWorkingPlace: string;
   designation: string;
   createdAt: Date;
+  user: {
+    status: UserStatus;
+  };
   specialities: Array<{
     specialityId: string;
     doctorId: string;
