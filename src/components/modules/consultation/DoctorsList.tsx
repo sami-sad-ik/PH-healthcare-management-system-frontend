@@ -4,13 +4,13 @@
 import { getDoctors } from "@/services/doctor.service";
 import { useQuery } from "@tanstack/react-query";
 
-const DoctorsList = () => {
+const DoctorsList = (queryString: string) => {
   const { data } = useQuery({
     queryKey: ["doctors"],
-    queryFn: () => getDoctors(),
+    queryFn: () => getDoctors(queryString),
   });
 
-  console.log(data);
+  // console.log(data);
   return (
     <div>
       {data.data.map((doctor: any) => (

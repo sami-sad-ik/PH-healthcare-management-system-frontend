@@ -6,7 +6,15 @@ import { IDoctor } from "@/types/doctor.types";
 import { useQuery } from "@tanstack/react-query";
 import { doctorColumns } from "./doctorsColumns";
 
-const DoctorsTable = () => {
+const DoctorsTable = ({
+  queryString,
+  queryParamsObject,
+}: {
+  queryString: string;  
+  queryParamsObject: {
+    [key: string]: string | string[] | undefined;
+  };
+}) => {
   // const doctorColumns = [
   //   { accessorKey: "name", header: "Name" },
   //   { accessorKey: "experience", header: "Experience" },
@@ -14,12 +22,12 @@ const DoctorsTable = () => {
 
   const { data: doctorDataResponse, isLoading } = useQuery({
     queryKey: ["doctors"],
-    queryFn: () => getDoctors(),
+    queryFn: () => getDoctors(queryString),
   });
 
   const { data: doctors } = doctorDataResponse! || {};
 
-  console.log(doctors);
+  // console.log(doctors);
 
   const onViewDoctor = (doctor: IDoctor) => {
     console.log("View doctor:", doctor);
@@ -33,7 +41,7 @@ const DoctorsTable = () => {
 
   return (
     <DataTable
-      data={doctors}
+      data={doctors ?? []}
       columns={doctorColumns}
       emptyMessage="No doctors found."
       isLoading={isLoading}
