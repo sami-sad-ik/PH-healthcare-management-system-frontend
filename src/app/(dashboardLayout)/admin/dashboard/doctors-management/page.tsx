@@ -13,25 +13,21 @@ const DoctorsManagementPage = async ({
 }) => {
   const queryParamsObject = await searchParams;
 
-  console.log(queryParamsObject);
-
-  const queryString = Object.keys(queryParamsObject)
-    .map((key) => {
-      const value = queryParamsObject[key];
-      if (Array.isArray(value)) {
-        return value.map((v) => `${key}=${v}`).join("&");
-      }
-      return `${key}=${value}`;
-    })
-    .join("&");
-
-  console.log(queryString);
+  const queryString = new URLSearchParams();
+  Object.entries(queryParamsObject).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      value.forEach((item) => queryString.append(key, item));
+    } else if (value !== undefined) {
+      queryString.set(key, value);
+    }
+  });
+  const serializedQueryString = queryString.toString();
 
   const queryClient = new QueryClient();
 
   await queryClient.prefetchQuery({
-    queryKey: ["doctors", queryParamsObject],
-    queryFn: () => getDoctors(queryString),
+    queryKey: ["doctors", serializedQueryString],
+    queryFn: () => getDoctors(serializedQueryString),
     staleTime: 1000 * 60 * 60, // 1 hour
     gcTime: 1000 * 60 * 60 * 6, //  6 hour
   });
@@ -39,8 +35,7 @@ const DoctorsManagementPage = async ({
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <DoctorsTable
-        queryString={queryString}
-        queryParamsObject={queryParamsObject}
+        queryString={serializedQueryString}
       />
     </HydrationBoundary>
   );

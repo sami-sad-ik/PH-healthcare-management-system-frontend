@@ -21,7 +21,7 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from "lucide-react";
 
 interface DataTableActions<TData> {
   onView?: (row: TData) => void;
@@ -139,6 +139,13 @@ const DataTable = <TData,>({
                             {flexRender(
                               header.column.columnDef.header,
                               header.getContext(),
+                            )}
+                            {header.column.getIsSorted() === "asc" ? (
+                              <ArrowUp className="ml-1 h-4 w-4" />
+                            ) : header.column.getIsSorted() === "desc" ? (
+                              <ArrowDown className="ml-1 h-4 w-4" />
+                            ) : (
+                              <ArrowUpDown className="ml-1 h-4 w-4 opacity-50" />
                             )}
                           </Button>
                         ) : (
