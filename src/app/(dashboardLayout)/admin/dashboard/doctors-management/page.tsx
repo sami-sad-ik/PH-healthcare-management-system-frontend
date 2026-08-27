@@ -1,5 +1,6 @@
 import DoctorsTable from "@/components/modules/Admin/DoctorsManagement/DoctorsTable";
 import { getDoctors } from "@/services/doctor.service";
+import { getAllSpecialities } from "@/services/speciality.service";
 import {
   dehydrate,
   HydrationBoundary,
@@ -21,6 +22,7 @@ const DoctorsManagementPage = async ({
       queryString.set(key, value);
     }
   });
+  if (!queryString.has("user.role")) queryString.set("user.role", "DOCTOR");
   const serializedQueryString = queryString.toString();
 
   const queryClient = new QueryClient();
@@ -30,6 +32,11 @@ const DoctorsManagementPage = async ({
     queryFn: () => getDoctors(serializedQueryString),
     staleTime: 1000 * 60 * 60, // 1 hour
     gcTime: 1000 * 60 * 60 * 6, //  6 hour
+  });
+  await queryClient.prefetchQuery({
+    queryKey: ["specialities"],
+    queryFn: getAllSpecialities,
+    staleTime: 1000 * 60 * 60,
   });
 
   return (

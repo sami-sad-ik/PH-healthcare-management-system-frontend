@@ -1,8 +1,12 @@
 "use client";
 
 import DataTable from "@/components/shared/table/DataTable";
+import DataTableFilters, {
+  DataTableFilterValues,
+} from "@/components/shared/table/DataTableFilters";
 import { Button } from "@/components/ui/button";
 import { getDoctors } from "@/services/doctor.service";
+import { getAllSpecialities } from "@/services/speciality.service";
 import { IDoctor } from "@/types/doctor.types";
 import { useQuery } from "@tanstack/react-query";
 import { SortingState } from "@tanstack/react-table";
@@ -62,6 +66,14 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
   });
 
   const { data: doctors } = doctorDataResponse! || {};
+  const { data: specialityResponse } = useQuery({
+    queryKey: ["specialities"],
+    queryFn: getAllSpecialities,
+    staleTime: 1000 * 60 * 60,
+  });
+  const specialities = Array.isArray(specialityResponse?.data)
+    ? specialityResponse.data
+    : [];
   const pageSizeFromUrl = Number(searchParams.get("limit"));
   const pageSize =
     Number.isInteger(pageSizeFromUrl) && pageSizeFromUrl > 0
@@ -96,7 +108,13 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
 
   const sortBy = searchParams.get("sortBy");
   const sortOrder = searchParams.get("sortOrder");
-  const searchTerm = searchParams.get("searchterm") ?? "";
+  const searchTerm = searchParams.get("searchTerm") ?? "";
+  const filterValues: DataTableFilterValues = {
+    gender: searchParams.get("gender") ?? "",
+    specialities: searchParams.getAll("specialities.speciality.title"),
+    appointmentFeeMin: searchParams.get("appointmentFee[gte]") ?? "",
+    appointmentFeeMax: searchParams.get("appointmentFee[lte]") ?? "",
+  };
   const sorting: SortingState = sortBy
     ? [{ id: sortBy, desc: sortOrder === "desc" }]
     : [];
@@ -125,9 +143,33 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
     params.set("page", "1");
 
     if (normalizedSearchTerm) {
-      params.set("searchterm", normalizedSearchTerm);
+      params.set("searchTerm", normalizedSearchTerm);
     } else {
-      params.delete("searchterm");
+      params.delete("searchTerm");
+    }
+
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`);
+    });
+  };
+
+  const handleFilterChange = (nextFilters: DataTableFilterValues) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", "1");
+    params.delete("gender");
+    params.delete("specialities.speciality.title");
+    params.delete("appointmentFee[gte]");
+    params.delete("appointmentFee[lte]");
+
+    if (nextFilters.gender) params.set("gender", nextFilters.gender);
+    nextFilters.specialities.forEach((title) =>
+      params.append("specialities.speciality.title", title),
+    );
+    if (nextFilters.appointmentFeeMin) {
+      params.set("appointmentFee[gte]", nextFilters.appointmentFeeMin);
+    }
+    if (nextFilters.appointmentFeeMax) {
+      params.set("appointmentFee[lte]", nextFilters.appointmentFeeMax);
     }
 
     startTransition(() => {
@@ -184,6 +226,15 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
           onChange: handleSearchChange,
           placeholder: "Search doctors...",
         }}
+        filters={
+          <DataTableFilters
+            key={JSON.stringify(filterValues)}
+            value={filterValues}
+            specialities={specialities}
+            onChange={handleFilterChange}
+            disabled={isLoading || isPending}
+          />
+        }
         sorting={{ state: sorting, onSortingChange: handleSortingChange }}
         actions={{
           onView: onViewDoctor,

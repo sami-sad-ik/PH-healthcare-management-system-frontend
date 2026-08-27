@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import DataTableSearch from "./DataTableSearch";
+import type { ReactNode } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,6 +47,7 @@ interface DataTableProps<TData> {
     placeholder?: string;
     debounceMs?: number;
   };
+  filters?: ReactNode;
 }
 
 const DataTable = <TData,>({
@@ -56,6 +58,7 @@ const DataTable = <TData,>({
   isLoading,
   sorting,
   search,
+  filters,
 }: DataTableProps<TData>) => {
   const tableColumns: ColumnDef<TData>[] = actions
     ? // action column
@@ -134,13 +137,16 @@ const DataTable = <TData,>({
   });
   return (
     <div className="relative">
-      {search && (
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <DataTableSearch
-            key={search.value}
-            {...search}
-            disabled={isLoading}
-          />
+      {(search || filters) && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+          {search && (
+            <DataTableSearch
+              key={search.value}
+              {...search}
+              disabled={isLoading}
+            />
+          )}
+          {filters}
         </div>
       )}
       {isLoading && (
