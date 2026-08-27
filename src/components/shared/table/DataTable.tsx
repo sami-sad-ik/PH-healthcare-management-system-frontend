@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import DataTableSearch from "./DataTableSearch";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +40,12 @@ interface DataTableProps<TData> {
     state: SortingState;
     onSortingChange: (state: SortingState) => void;
   };
+  search?: {
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
+    debounceMs?: number;
+  };
 }
 
 const DataTable = <TData,>({
@@ -48,6 +55,7 @@ const DataTable = <TData,>({
   emptyMessage,
   isLoading,
   sorting,
+  search,
 }: DataTableProps<TData>) => {
   const tableColumns: ColumnDef<TData>[] = actions
     ? // action column
@@ -100,7 +108,19 @@ const DataTable = <TData,>({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     manualSorting: !!sorting,
-    state: { ...(sorting ? { sorting: sorting.state } : {}) },
+    manualFiltering: !!search,
+    state: {
+      ...(sorting ? { sorting: sorting.state } : {}),
+      ...(search ? { globalFilter: search.value } : {}),
+    },
+    onGlobalFilterChange: search
+      ? (updater) => {
+          const currentSearch = search.value;
+          const nextSearch =
+            typeof updater === "function" ? updater(currentSearch) : updater;
+          search.onChange(nextSearch);
+        }
+      : undefined,
     onSortingChange: sorting
       ? (updater) => {
           const currentSortingState = sorting.state;
@@ -114,6 +134,15 @@ const DataTable = <TData,>({
   });
   return (
     <div className="relative">
+      {search && (
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <DataTableSearch
+            key={search.value}
+            {...search}
+            disabled={isLoading}
+          />
+        </div>
+      )}
       {isLoading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/50">
           <span className="text-gray-500">Loading...</span>

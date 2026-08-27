@@ -49,6 +49,7 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const activeQueryString = searchParams.toString() || queryString;
 
   const {
     data: doctorDataResponse,
@@ -56,8 +57,8 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
     isFetching,
     isError,
   } = useQuery({
-    queryKey: ["doctors", queryString],
-    queryFn: () => getDoctors(queryString),
+    queryKey: ["doctors", activeQueryString],
+    queryFn: () => getDoctors(activeQueryString),
   });
 
   const { data: doctors } = doctorDataResponse! || {};
@@ -95,6 +96,7 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
 
   const sortBy = searchParams.get("sortBy");
   const sortOrder = searchParams.get("sortOrder");
+  const searchTerm = searchParams.get("searchterm") ?? "";
   const sorting: SortingState = sortBy
     ? [{ id: sortBy, desc: sortOrder === "desc" }]
     : [];
@@ -110,6 +112,22 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
     } else {
       params.delete("sortBy");
       params.delete("sortOrder");
+    }
+
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`);
+    });
+  };
+
+  const handleSearchChange = (nextSearchTerm: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const normalizedSearchTerm = nextSearchTerm.trim();
+    params.set("page", "1");
+
+    if (normalizedSearchTerm) {
+      params.set("searchterm", normalizedSearchTerm);
+    } else {
+      params.delete("searchterm");
     }
 
     startTransition(() => {
@@ -161,6 +179,11 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
             : "No doctors found."
         }
         isLoading={isLoading || isFetching || isPending}
+        search={{
+          value: searchTerm,
+          onChange: handleSearchChange,
+          placeholder: "Search doctors...",
+        }}
         sorting={{ state: sorting, onSortingChange: handleSortingChange }}
         actions={{
           onView: onViewDoctor,
