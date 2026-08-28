@@ -47,13 +47,73 @@ const DataTableFilters = ({
     onChange(cleared);
   };
 
+  const removeFilter = (filter: keyof DataTableFilterValues, speciality?: string) => {
+    if (filter === "specialities" && speciality) {
+      onChange({
+        ...value,
+        specialities: value.specialities.filter((title) => title !== speciality),
+      });
+      return;
+    }
+
+    onChange({
+      ...value,
+      [filter]: filter === "specialities" ? [] : "",
+    });
+  };
+
   const activeCount =
-    draft.specialities.length +
-    (draft.gender ? 1 : 0) +
-    (draft.appointmentFeeMin || draft.appointmentFeeMax ? 1 : 0);
+    value.specialities.length +
+    (value.gender ? 1 : 0) +
+    (value.appointmentFeeMin || value.appointmentFeeMax ? 1 : 0);
+
+  const feeLabel =
+    value.appointmentFeeMin && value.appointmentFeeMax
+      ? `${value.appointmentFeeMin} - ${value.appointmentFeeMax}`
+      : value.appointmentFeeMin
+        ? `From ${value.appointmentFeeMin}`
+        : `Up to ${value.appointmentFeeMax}`;
 
   return (
-    <div className="relative">
+    <div className="relative flex max-w-full flex-wrap items-center justify-end gap-2">
+      <div className="flex min-w-0 flex-wrap justify-end gap-2">
+        {value.gender && (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => removeFilter("gender")}
+            aria-label={`Remove gender filter: ${value.gender}`}
+            className="inline-flex max-w-full items-center gap-1 rounded-lg border bg-muted px-2.5 py-1.5 text-xs font-medium hover:bg-muted/70 disabled:pointer-events-none disabled:opacity-50">
+            <span>Gender: {value.gender === "MALE" ? "Male" : "Female"}</span>
+            <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          </button>
+        )}
+        {value.specialities.map((speciality) => (
+          <button
+            key={speciality}
+            type="button"
+            disabled={disabled}
+            onClick={() => removeFilter("specialities", speciality)}
+            aria-label={`Remove speciality filter: ${speciality}`}
+            className="inline-flex max-w-full items-center gap-1 rounded-lg border bg-muted px-2.5 py-1.5 text-xs font-medium hover:bg-muted/70 disabled:pointer-events-none disabled:opacity-50">
+            <span className="truncate">Speciality: {speciality}</span>
+            <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          </button>
+        ))}
+        {(value.appointmentFeeMin || value.appointmentFeeMax) && (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() =>
+              onChange({ ...value, appointmentFeeMin: "", appointmentFeeMax: "" })
+            }
+            aria-label={`Remove appointment fee filter: ${feeLabel}`}
+            className="inline-flex max-w-full items-center gap-1 rounded-lg border bg-muted px-2.5 py-1.5 text-xs font-medium hover:bg-muted/70 disabled:pointer-events-none disabled:opacity-50">
+            <span>Fee: {feeLabel}</span>
+            <X className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+          </button>
+        )}
+      </div>
       <Button
         type="button"
         variant="outline"

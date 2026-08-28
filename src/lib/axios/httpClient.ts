@@ -14,7 +14,7 @@ export const tryRefreshToken = async (
   accessToken: string,
   refreshToken: string,
 ): Promise<void> => {
-  if (!isTokenExpiringSoon) return;
+  if (!(await isTokenExpiringSoon(accessToken))) return;
   const requestHeader = await headers();
   if (requestHeader.get("x-token-refreshed")) return;
   try {

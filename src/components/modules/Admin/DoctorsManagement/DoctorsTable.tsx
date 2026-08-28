@@ -4,14 +4,24 @@ import DataTable from "@/components/shared/table/DataTable";
 import DataTableFilters, {
   DataTableFilterValues,
 } from "@/components/shared/table/DataTableFilters";
+import CreateDoctorForm from "./CreateDoctorForm";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { getDoctors } from "@/services/doctor.service";
 import { getAllSpecialities } from "@/services/speciality.service";
 import { IDoctor } from "@/types/doctor.types";
 import { useQuery } from "@tanstack/react-query";
 import { SortingState } from "@tanstack/react-table";
+import { Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { doctorColumns } from "./doctorsColumns";
 
 type PageItem = number | "ellipsis";
@@ -49,6 +59,7 @@ const getPageItems = (currentPage: number, totalPages: number): PageItem[] => {
 };
 
 const DoctorsTable = ({ queryString }: { queryString: string }) => {
+  const [isCreateDoctorOpen, setIsCreateDoctorOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -212,6 +223,37 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
 
   return (
     <div>
+      <div className="mb-4 flex justify-end">
+        <Dialog
+          open={isCreateDoctorOpen}
+          disablePointerDismissal
+          onOpenChange={(open, details) => {
+            if (open || details.reason === "close-press") {
+              setIsCreateDoctorOpen(open);
+            }
+          }}>
+          <DialogTrigger
+            render={
+              <Button type="button">
+                <Plus />
+                Create doctor
+              </Button>
+            }
+          />
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create doctor</DialogTitle>
+              <DialogDescription>
+                Add a doctor and assign their specialities.
+              </DialogDescription>
+            </DialogHeader>
+            <CreateDoctorForm
+              specialities={specialities}
+              onSuccess={() => setIsCreateDoctorOpen(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
       <DataTable
         data={doctors ?? []}
         columns={doctorColumns}

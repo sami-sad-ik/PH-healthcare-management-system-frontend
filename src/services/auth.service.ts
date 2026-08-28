@@ -9,11 +9,13 @@ export const getNewTokensWithRefreshToken = async (
   refreshToken: string,
 ): Promise<boolean> => {
   try {
+    const cookieStore = await cookies();
+    const sessionToken = cookieStore.get("better-auth.session_token")?.value;
     const res = await fetch(`${BASE_API_URL}/auth/refresh-token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Cookie: `refreshToken=${refreshToken}`,
+        Cookie: `refreshToken=${refreshToken}; better-auth.session_token=${sessionToken ?? ""}`,
       },
     });
     if (!res.ok) return false;
