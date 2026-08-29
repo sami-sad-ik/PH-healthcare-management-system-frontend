@@ -1,10 +1,9 @@
 "use client";
 
 import DataTable from "@/components/shared/table/DataTable";
-import DataTableFilters, {
-  DataTableFilterValues,
-} from "@/components/shared/table/DataTableFilters";
+import DataTableFilters from "@/components/shared/table/DataTableFilters";
 import CreateDoctorForm from "./CreateDoctorForm";
+import DoctorDetails from "./DoctorDetails";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,70 +17,43 @@ import { deleteDoctor, getDoctors } from "@/services/doctor.service";
 import { getAllSpecialities } from "@/services/speciality.service";
 import { IDoctor } from "@/types/doctor.types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { SortingState } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useState } from "react";
 import { doctorColumns } from "./doctorsColumns";
-
-type PageItem = number | "ellipsis";
-
-const getPageItems = (currentPage: number, totalPages: number): PageItem[] => {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
-  }
-
-  if (currentPage <= 4) {
-    return [1, 2, 3, 4, 5, "ellipsis", totalPages];
-  }
-
-  if (currentPage >= totalPages - 3) {
-    return [
-      1,
-      "ellipsis",
-      totalPages - 4,
-      totalPages - 3,
-      totalPages - 2,
-      totalPages - 1,
-      totalPages,
-    ];
-  }
-
-  return [
-    1,
-    "ellipsis",
-    currentPage - 1,
-    currentPage,
-    currentPage + 1,
-    "ellipsis",
-    totalPages,
-  ];
-};
+import { useManagementTable } from "@/hooks/useManagementTable";
 
 const DoctorsTable = ({ queryString }: { queryString: string }) => {
   const [isCreateDoctorOpen, setIsCreateDoctorOpen] = useState(false);
   const [editingDoctor, setEditingDoctor] = useState<IDoctor | null>(null);
+  const [viewingDoctor, setViewingDoctor] = useState<IDoctor | null>(null);
   const [deletingDoctor, setDeletingDoctor] = useState<IDoctor | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const queryClient = useQueryClient();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
-  const activeQueryString = searchParams.toString() || queryString;
 
   const {
-    data: doctorDataResponse,
+    data: doctors,
     isLoading,
     isFetching,
     isError,
-  } = useQuery({
-    queryKey: ["doctors", activeQueryString],
-    queryFn: () => getDoctors(activeQueryString),
+    isPending,
+    searchTerm,
+    sorting,
+    filterValues,
+    currentPage,
+    pageSize,
+    totalPages,
+    pageItems,
+    handleSortingChange,
+    handleSearchChange,
+    handleFilterChange,
+    handlePageChange,
+    handlePageSizeChange,
+  } = useManagementTable<IDoctor>({
+    queryKey: ["doctors"],
+    queryFn: getDoctors,
+    initialQueryString: queryString,
   });
 
-  const { data: doctors } = doctorDataResponse! || {};
-  console.log(doctors);
   const { data: specialityResponse } = useQuery({
     queryKey: ["specialities"],
     queryFn: getAllSpecialities,
@@ -90,134 +62,9 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
   const specialities = Array.isArray(specialityResponse?.data)
     ? specialityResponse.data
     : [];
-  const pageSizeFromUrl = Number(searchParams.get("limit"));
-  const pageSize =
-    Number.isInteger(pageSizeFromUrl) && pageSizeFromUrl > 0
-      ? pageSizeFromUrl
-      : (doctorDataResponse?.meta?.limit ?? 10);
-  const totalPages = Math.max(doctorDataResponse?.meta?.totalPages ?? 1, 1);
-  const requestedPage = Number(searchParams.get("page") ?? "1");
-  const currentPage = Math.min(
-    Math.max(
-      Number.isInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1,
-      1,
-    ),
-    totalPages,
-  );
-  const filterQueryParams = new URLSearchParams(searchParams.toString());
-  filterQueryParams.delete("page");
-  const filterQuery = filterQueryParams.toString();
-  const previousFilterQuery = useRef(filterQuery);
-
-  useEffect(() => {
-    if (previousFilterQuery.current === filterQuery) return;
-
-    previousFilterQuery.current = filterQuery;
-    if (currentPage !== 1) {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("page", "1");
-      startTransition(() => {
-        router.replace(`${pathname}?${params.toString()}`);
-      });
-    }
-  }, [currentPage, filterQuery, pathname, router, searchParams]);
-
-  const sortBy = searchParams.get("sortBy");
-  const sortOrder = searchParams.get("sortOrder");
-  const searchTerm = searchParams.get("searchTerm") ?? "";
-  const filterValues: DataTableFilterValues = {
-    gender: searchParams.get("gender") ?? "",
-    specialities: searchParams.getAll("specialities.speciality.title"),
-    appointmentFeeMin: searchParams.get("appointmentFee[gte]") ?? "",
-    appointmentFeeMax: searchParams.get("appointmentFee[lte]") ?? "",
-  };
-  const sorting: SortingState = sortBy
-    ? [{ id: sortBy, desc: sortOrder === "desc" }]
-    : [];
-
-  const handleSortingChange = (nextSorting: SortingState) => {
-    const params = new URLSearchParams(searchParams.toString());
-    const nextSort = nextSorting[0];
-    params.set("page", "1");
-
-    if (nextSort) {
-      params.set("sortBy", nextSort.id);
-      params.set("sortOrder", nextSort.desc ? "desc" : "asc");
-    } else {
-      params.delete("sortBy");
-      params.delete("sortOrder");
-    }
-
-    startTransition(() => {
-      router.replace(`${pathname}?${params.toString()}`);
-    });
-  };
-
-  const handleSearchChange = (nextSearchTerm: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    const normalizedSearchTerm = nextSearchTerm.trim();
-    params.set("page", "1");
-
-    if (normalizedSearchTerm) {
-      params.set("searchTerm", normalizedSearchTerm);
-    } else {
-      params.delete("searchTerm");
-    }
-
-    startTransition(() => {
-      router.replace(`${pathname}?${params.toString()}`);
-    });
-  };
-
-  const handleFilterChange = (nextFilters: DataTableFilterValues) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", "1");
-    params.delete("gender");
-    params.delete("specialities.speciality.title");
-    params.delete("appointmentFee[gte]");
-    params.delete("appointmentFee[lte]");
-
-    if (nextFilters.gender) params.set("gender", nextFilters.gender);
-    nextFilters.specialities.forEach((title) =>
-      params.append("specialities.speciality.title", title),
-    );
-    if (nextFilters.appointmentFeeMin) {
-      params.set("appointmentFee[gte]", nextFilters.appointmentFeeMin);
-    }
-    if (nextFilters.appointmentFeeMax) {
-      params.set("appointmentFee[lte]", nextFilters.appointmentFeeMax);
-    }
-
-    startTransition(() => {
-      router.replace(`${pathname}?${params.toString()}`);
-    });
-  };
-
-  const handlePageChange = (page: number) => {
-    if (page < 1 || page > totalPages || page === currentPage) return;
-
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", String(page));
-    params.set("limit", String(pageSize));
-    startTransition(() => {
-      router.replace(`${pathname}?${params.toString()}`);
-    });
-  };
-
-  const handlePageSizeChange = (value: string) => {
-    const nextPageSize = Number(value);
-    if (!Number.isInteger(nextPageSize) || nextPageSize < 1) return;
-
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", "1");
-    params.set("limit", String(nextPageSize));
-    startTransition(() => {
-      router.replace(`${pathname}?${params.toString()}`);
-    });
-  };
 
   const onViewDoctor = (doctor: IDoctor) => {
-    console.log("View doctor:", doctor);
+    setViewingDoctor(doctor);
   };
   const onEditDoctor = (doctor: IDoctor) => {
     setEditingDoctor(doctor);
@@ -296,6 +143,23 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
               onSuccess={() => setEditingDoctor(null)}
             />
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={Boolean(viewingDoctor)}
+        onOpenChange={(open, details) => {
+          if (!open && details.reason === "close-press") {
+            setViewingDoctor(null);
+          }
+        }}>
+        <DialogContent className="max-w-6xl">
+          <DialogHeader>
+            <DialogTitle>Doctor profile</DialogTitle>
+            <DialogDescription>
+              Complete profile, account, appointment, schedule, and review details.
+            </DialogDescription>
+          </DialogHeader>
+          {viewingDoctor && <DoctorDetails doctorId={viewingDoctor.id} />}
         </DialogContent>
       </Dialog>
       <Dialog
@@ -389,6 +253,7 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
           </select>
         </label>
         <nav
+
           aria-label="Doctors pagination"
           className="flex items-center justify-center gap-1">
           <Button
@@ -398,7 +263,7 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
             onClick={() => handlePageChange(currentPage - 1)}>
             Previous
           </Button>
-          {getPageItems(currentPage, totalPages).map((pageItem, index) =>
+          {pageItems.map((pageItem, index) =>
             pageItem === "ellipsis" ? (
               <span
                 key={`ellipsis-${index}`}

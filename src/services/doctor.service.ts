@@ -2,6 +2,7 @@
 
 import { httpClient } from "@/lib/axios/httpClient";
 import { IDoctor } from "@/types/doctor.types";
+import type { DoctorDetailsData } from "@/components/modules/Admin/DoctorsManagement/DoctorDetails";
 import {
   ICreateDoctorPayload,
   IUpdateDoctorPayload,
@@ -14,6 +15,10 @@ export const getDoctors = async (queryString: string) => {
     normalizedQueryString ? `/doctor?${normalizedQueryString}` : "/doctor",
   );
   return doctors;
+};
+
+export const getDoctorById = async (id: string) => {
+  return httpClient.get<DoctorDetailsData>(`/doctor/${id}`);
 };
 
 export const createDoctor = async (payload: ICreateDoctorPayload) => {
