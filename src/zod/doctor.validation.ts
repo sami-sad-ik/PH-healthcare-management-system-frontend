@@ -20,3 +20,22 @@ export const createDoctorZodSchema = z.object({
 });
 
 export type ICreateDoctorPayload = z.infer<typeof createDoctorZodSchema>;
+
+export const updateDoctorZodSchema = z.object({
+  name: z.string().max(20, "Name must be less than 20 characters").optional(),
+  contactNumber: z
+    .string()
+    .min(11, "Contact number must be at least 11 digits")
+    .optional(),
+  address: z.string().optional(),
+  registrationNumber: z.string().optional(),
+  qualification: z.string().optional(),
+  experience: z.number().int("Experience must be an integer").nonnegative().optional(),
+  gender: z.enum(["MALE", "FEMALE"]).optional(),
+  appointmentFee: z.number().nonnegative().optional(),
+  currentWorkingPlace: z.string().optional(),
+  designation: z.string().optional(),
+  specialities: z.array(z.uuid()).optional(),
+});
+
+export type IUpdateDoctorPayload = z.infer<typeof updateDoctorZodSchema>;

@@ -2,7 +2,10 @@
 
 import { httpClient } from "@/lib/axios/httpClient";
 import { IDoctor } from "@/types/doctor.types";
-import { ICreateDoctorPayload } from "@/zod/doctor.validation";
+import {
+  ICreateDoctorPayload,
+  IUpdateDoctorPayload,
+} from "@/zod/doctor.validation";
 
 export const getDoctors = async (queryString: string) => {
   const queryParams = new URLSearchParams(queryString);
@@ -15,4 +18,15 @@ export const getDoctors = async (queryString: string) => {
 
 export const createDoctor = async (payload: ICreateDoctorPayload) => {
   return httpClient.post<IDoctor>("/user/create-doctor", payload);
+};
+
+export const updateDoctor = async (
+  id: string,
+  payload: IUpdateDoctorPayload,
+) => {
+  return httpClient.patch<IDoctor>(`/doctor/${id}`, payload);
+};
+
+export const deleteDoctor = async (id: string) => {
+  return httpClient.delete(`/doctor/${id}`);
 };

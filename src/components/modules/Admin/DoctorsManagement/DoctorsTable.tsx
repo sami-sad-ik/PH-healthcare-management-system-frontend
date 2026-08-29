@@ -14,10 +14,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { getDoctors } from "@/services/doctor.service";
+import { deleteDoctor, getDoctors } from "@/services/doctor.service";
 import { getAllSpecialities } from "@/services/speciality.service";
 import { IDoctor } from "@/types/doctor.types";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { SortingState } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -60,6 +60,10 @@ const getPageItems = (currentPage: number, totalPages: number): PageItem[] => {
 
 const DoctorsTable = ({ queryString }: { queryString: string }) => {
   const [isCreateDoctorOpen, setIsCreateDoctorOpen] = useState(false);
+  const [editingDoctor, setEditingDoctor] = useState<IDoctor | null>(null);
+  const [deletingDoctor, setDeletingDoctor] = useState<IDoctor | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -77,6 +81,7 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
   });
 
   const { data: doctors } = doctorDataResponse! || {};
+  console.log(doctors);
   const { data: specialityResponse } = useQuery({
     queryKey: ["specialities"],
     queryFn: getAllSpecialities,
@@ -215,11 +220,25 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
     console.log("View doctor:", doctor);
   };
   const onEditDoctor = (doctor: IDoctor) => {
-    console.log("Edit doctor:", doctor);
+    setEditingDoctor(doctor);
   };
   const onDeleteDoctor = (doctor: IDoctor) => {
-    console.log("Delete doctor:", doctor);
+    setDeleteError(null);
+    setDeletingDoctor(doctor);
   };
+
+  const { mutate: confirmDeleteDoctor, isPending: isDeleting } = useMutation({
+    mutationFn: (id: string) => deleteDoctor(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["doctors"] });
+      setDeletingDoctor(null);
+    },
+    onError: (error) => {
+      setDeleteError(
+        error instanceof Error ? error.message : "Unable to delete doctor.",
+      );
+    },
+  });
 
   return (
     <div>
@@ -254,6 +273,76 @@ const DoctorsTable = ({ queryString }: { queryString: string }) => {
           </DialogContent>
         </Dialog>
       </div>
+      <Dialog
+        open={Boolean(editingDoctor)}
+        disablePointerDismissal
+        onOpenChange={(open, details) => {
+          if (!open && details.reason === "close-press") {
+            setEditingDoctor(null);
+          }
+        }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit doctor</DialogTitle>
+            <DialogDescription>
+              Update the doctor details and assigned specialities.
+            </DialogDescription>
+          </DialogHeader>
+          {editingDoctor && (
+            <CreateDoctorForm
+              key={editingDoctor.id}
+              doctor={editingDoctor}
+              specialities={specialities}
+              onSuccess={() => setEditingDoctor(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={Boolean(deletingDoctor)}
+        disablePointerDismissal={isDeleting}
+        onOpenChange={(open, details) => {
+          if (!open && details.reason === "close-press" && !isDeleting) {
+            setDeletingDoctor(null);
+            setDeleteError(null);
+          }
+        }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete doctor</DialogTitle>
+            <DialogDescription>
+              This will remove {deletingDoctor?.name} from the doctors list.
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deleteError && (
+            <p className="mb-4 text-sm text-destructive">{deleteError}</p>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isDeleting}
+              onClick={() => {
+                setDeletingDoctor(null);
+                setDeleteError(null);
+              }}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={!deletingDoctor || isDeleting}
+              onClick={() => {
+                if (deletingDoctor) {
+                  confirmDeleteDoctor(String(deletingDoctor.id));
+                }
+              }}>
+              {isDeleting ? "Deleting..." : "Delete doctor"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <DataTable
         data={doctors ?? []}
         columns={doctorColumns}

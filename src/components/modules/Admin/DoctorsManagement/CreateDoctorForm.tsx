@@ -4,11 +4,14 @@ import AppField from "@/components/shared/form/AppField";
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { createDoctor } from "@/services/doctor.service";
+import { createDoctor, updateDoctor } from "@/services/doctor.service";
 import {
   createDoctorZodSchema,
   ICreateDoctorPayload,
+  IUpdateDoctorPayload,
+  updateDoctorZodSchema,
 } from "@/zod/doctor.validation";
+import { IDoctor } from "@/types/doctor.types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
 import { useState } from "react";
@@ -16,6 +19,7 @@ import { useState } from "react";
 interface CreateDoctorFormProps {
   specialities: Array<{ id: string; title: string }>;
   onSuccess: () => void;
+  doctor?: IDoctor;
 }
 
 type DoctorFormValues = {
@@ -52,6 +56,23 @@ const initialValues: DoctorFormValues = {
   specialities: [],
 };
 
+const getInitialValues = (doctor?: IDoctor): DoctorFormValues => ({
+  ...initialValues,
+  name: doctor?.name ?? "",
+  email: doctor?.email ?? "",
+  contactNumber: doctor?.contactNumber ?? "",
+  address: doctor?.address ?? "",
+  registrationNumber: doctor?.registrationNumber ?? "",
+  qualification: doctor?.qualification ?? "",
+  experience: doctor?.experience?.toString() ?? "",
+  gender: doctor?.gender ?? "",
+  appointmentFee: doctor?.appointmentFee?.toString() ?? "",
+  currentWorkingPlace: doctor?.currentWorkingPlace ?? "",
+  designation: doctor?.designation ?? "",
+  specialities:
+    doctor?.specialities?.map((item) => item.speciality.id) ?? [],
+});
+
 const getErrorMessage = (error: unknown) => {
   if (error && typeof error === "object" && "response" in error) {
     const response = error.response;
@@ -68,13 +89,16 @@ const getErrorMessage = (error: unknown) => {
 const CreateDoctorForm = ({
   specialities,
   onSuccess,
+  doctor,
 }: CreateDoctorFormProps) => {
+  const isEdit = Boolean(doctor);
   const queryClient = useQueryClient();
   const [serverError, setServerError] = useState<string | null>(null);
   const [specialityError, setSpecialityError] = useState<string | null>(null);
 
   const { mutateAsync, isPending } = useMutation({
-    mutationFn: (payload: ICreateDoctorPayload) => createDoctor(payload),
+    mutationFn: (payload: ICreateDoctorPayload | IUpdateDoctorPayload) =>
+      doctor ? updateDoctor(String(doctor.id), payload as IUpdateDoctorPayload) : createDoctor(payload as ICreateDoctorPayload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["doctors"] });
       onSuccess();
@@ -82,18 +106,15 @@ const CreateDoctorForm = ({
   });
 
   const form = useForm({
-    defaultValues: initialValues,
+    defaultValues: getInitialValues(doctor),
     onSubmit: async ({ value }) => {
       setServerError(null);
       setSpecialityError(null);
 
-      const payload = {
-        password: value.password,
-        doctor: {
+      const payload = isEdit
+        ? {
           name: value.name,
-          email: value.email,
           contactNumber: value.contactNumber,
-        //   profilePhoto: value.profilePhoto,
           address: value.address || undefined,
           registrationNumber: value.registrationNumber,
           qualification: value.qualification,
@@ -102,10 +123,28 @@ const CreateDoctorForm = ({
           appointmentFee: Number(value.appointmentFee),
           currentWorkingPlace: value.currentWorkingPlace,
           designation: value.designation,
-        },
-        specialities: value.specialities,
-      };
-      const result = createDoctorZodSchema.safeParse(payload);
+          specialities: value.specialities,
+        }
+        : {
+            password: value.password,
+            doctor: {
+              name: value.name,
+              email: value.email,
+              contactNumber: value.contactNumber,
+              address: value.address || undefined,
+              registrationNumber: value.registrationNumber,
+              qualification: value.qualification,
+              experience: value.experience ? Number(value.experience) : undefined,
+              gender: value.gender,
+              appointmentFee: Number(value.appointmentFee),
+              currentWorkingPlace: value.currentWorkingPlace,
+              designation: value.designation,
+            },
+            specialities: value.specialities,
+          };
+      const result = isEdit
+        ? updateDoctorZodSchema.safeParse(payload)
+        : createDoctorZodSchema.safeParse(payload);
 
       if (!result.success) {
         const firstIssue = result.error.issues[0];
@@ -142,7 +181,7 @@ const CreateDoctorForm = ({
             <AppField field={field} label="Name" placeholder="Doctor name" />
           )}
         </form.Field>
-        <form.Field name="email">
+        {!isEdit && <form.Field name="email">
           {(field) => (
             <AppField
               field={field}
@@ -151,8 +190,8 @@ const CreateDoctorForm = ({
               placeholder="doctor@example.com"
             />
           )}
-        </form.Field>
-        <form.Field name="password">
+        </form.Field>}
+        {!isEdit && <form.Field name="password">
           {(field) => (
             <AppField
               field={field}
@@ -161,7 +200,7 @@ const CreateDoctorForm = ({
               placeholder="At least 6 characters"
             />
           )}
-        </form.Field>
+        </form.Field>}
         <form.Field name="contactNumber">
           {(field) => (
             <AppField
@@ -318,9 +357,9 @@ const CreateDoctorForm = ({
           {([isSubmitting]) => (
             <AppSubmitButton
               isPending={isSubmitting || isPending}
-              pendingLabel="Creating doctor..."
+              pendingLabel={isEdit ? "Updating doctor..." : "Creating doctor..."}
               className="w-auto">
-              Create doctor
+              {isEdit ? "Update doctor" : "Create doctor"}
             </AppSubmitButton>
           )}
         </form.Subscribe>
