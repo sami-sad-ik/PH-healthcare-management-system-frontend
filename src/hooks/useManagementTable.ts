@@ -88,9 +88,29 @@ export const useManagementTable = <TData>({
     queryFn: () => queryFn(activeQueryString),
   });
 
-  const payload = queryData as ManagementTableResponse<TData> | TData[] | undefined;
-  const data = Array.isArray(payload) ? payload : payload?.data ?? [];
-  const meta = !Array.isArray(payload) ? payload?.meta ?? {} : {};
+  const payload = queryData as
+    | ManagementTableResponse<TData>
+    | TData[]
+    | { data?: unknown; meta?: ManagementTableMeta }
+    | undefined;
+
+  const directData = Array.isArray(payload) ? payload : undefined;
+  const nestedData = !Array.isArray(payload) ? payload?.data : undefined;
+  const nestedCollection =
+    !Array.isArray(payload) && nestedData && typeof nestedData === "object"
+      ? (nestedData as { data?: TData[]; meta?: ManagementTableMeta }).data
+      : undefined;
+
+  const data =
+    directData ??
+    (Array.isArray(nestedData) ? nestedData : Array.isArray(nestedCollection) ? nestedCollection : []);
+
+  const meta = !Array.isArray(payload)
+    ? (payload?.meta ??
+        (nestedData && typeof nestedData === "object"
+          ? (nestedData as { meta?: ManagementTableMeta }).meta ?? {}
+          : {}))
+    : {};
 
   const pageSizeFromUrl = Number(searchParams.get("limit"));
   const pageSize =
