@@ -11,7 +11,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useManagementTable } from "@/hooks/useManagementTable";
-import { deleteDoctorSchedule, getMyDoctorSchedules, IDoctorSchedule, bookDoctorSchedule } from "@/services/doctorSchedule.service";
+import {
+  bookDoctorSchedule,
+  deleteDoctorSchedule,
+  getMyDoctorSchedules,
+  IDoctorSchedule,
+} from "@/services/doctorSchedule.service";
 import { getSchedules } from "@/services/schedule.service";
 import { ISchedule } from "@/types/schedule.types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -33,10 +38,35 @@ const formatListDate = (date: string | Date) =>
 const formatListTime = (date: string | Date) =>
   format(new Date(date), "hh:mm a");
 
+const getBookedPersonName = (schedule: IDoctorSchedule | null) => {
+  if (!schedule) return "Not assigned";
+
+  const candidateNames = [
+    schedule.patient?.name,
+    schedule.patient?.user?.name,
+    schedule.appointment?.patient?.name,
+    schedule.appointment?.patient?.user?.name,
+    schedule.bookedBy?.name,
+    schedule.bookedBy?.user?.name,
+    schedule.user?.name,
+  ];
+
+  const foundName = candidateNames.find((name) => {
+    return typeof name === "string" && name.trim().length > 0;
+  });
+
+  return foundName ? foundName : "Not assigned";
+};
+
 const DoctorScheduleTables = ({ queryString }: { queryString: string }) => {
   const queryClient = useQueryClient();
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [viewingSchedule, setViewingSchedule] =
+    useState<IDoctorSchedule | null>(null);
+  const [deletingSchedule, setDeletingSchedule] =
+    useState<IDoctorSchedule | null>(null);
   const [bookingError, setBookingError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const {
     data: doctorSchedules,
@@ -61,32 +91,55 @@ const DoctorScheduleTables = ({ queryString }: { queryString: string }) => {
   });
 
   const { data: scheduleResponse } = useQuery({
-    queryKey: ["availableDoctorSchedules"],
+    queryKey: ["availableSchedulesForBooking"],
     queryFn: () => getSchedules(""),
     staleTime: 1000 * 60 * 60,
   });
 
+
   const allSchedules = useMemo(() => {
-    if (Array.isArray(scheduleResponse)) return scheduleResponse;
-    return Array.isArray(scheduleResponse?.data) ? scheduleResponse.data : [];
+    if (!scheduleResponse) return [];
+
+    const candidate = (scheduleResponse as { data?: unknown })?.data ?? scheduleResponse;
+
+    if (Array.isArray(candidate)) return candidate;
+    if (candidate && typeof candidate === "object") {
+      const nested = candidate as { data?: unknown; results?: unknown };
+      if (Array.isArray(nested.data)) return nested.data;
+      if (Array.isArray(nested.results)) return nested.results;
+    }
+
+    return [];
   }, [scheduleResponse]);
 
   const bookedScheduleIds = useMemo(() => {
     const ids = new Set<string>();
+
     (doctorSchedules ?? []).forEach((item) => {
       const scheduleId = item.scheduleId ?? item.schedule?.id;
       if (scheduleId) ids.add(scheduleId);
     });
+
     return ids;
   }, [doctorSchedules]);
 
   const availableToBook = useMemo(() => {
     const now = new Date();
+
     return (allSchedules ?? []).filter((schedule: ISchedule) => {
       const startDate = new Date(schedule.startDateTime);
-      return startDate >= now && !bookedScheduleIds.has(schedule.id);
+      return !Number.isNaN(startDate.getTime()) && startDate >= now && !bookedScheduleIds.has(schedule.id);
     });
   }, [allSchedules, bookedScheduleIds]);
+
+  const onViewSchedule = (schedule: IDoctorSchedule) => {
+    setViewingSchedule(schedule);
+  };
+
+  const onDeleteSchedule = (schedule: IDoctorSchedule) => {
+    setDeleteError(null);
+    setDeletingSchedule(schedule);
+  };
 
   const { mutate: confirmBooking, isPending: isBooking } = useMutation({
     mutationFn: (scheduleId: string) => bookDoctorSchedule(scheduleId),
@@ -95,7 +148,7 @@ const DoctorScheduleTables = ({ queryString }: { queryString: string }) => {
       setIsBookingOpen(false);
       await queryClient.invalidateQueries({ queryKey: ["myDoctorSchedules"] });
       await queryClient.invalidateQueries({
-        queryKey: ["availableDoctorSchedules"],
+        queryKey: ["availableSchedulesForBooking"],
       });
     },
     onError: (error) => {
@@ -110,13 +163,17 @@ const DoctorScheduleTables = ({ queryString }: { queryString: string }) => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["myDoctorSchedules"] });
       await queryClient.invalidateQueries({
-        queryKey: ["availableDoctorSchedules"],
+        queryKey: ["availableSchedulesForBooking"],
       });
+      setDeletingSchedule(null);
+      setDeleteError(null);
     },
     onError: (error) => {
-      if (error instanceof Error) {
-        setBookingError(error.message);
-      }
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : "Unable to remove this schedule.",
+      );
     },
   });
 
@@ -133,12 +190,16 @@ const DoctorScheduleTables = ({ queryString }: { queryString: string }) => {
           <div className="space-y-1">
             <p className="font-medium text-foreground">
               {schedule
-                ? formatScheduleRange(schedule.startDateTime, schedule.endDateTime)
+                ? formatScheduleRange(
+                    schedule.startDateTime,
+                    schedule.endDateTime,
+                  )
                 : "Slot scheduled"}
             </p>
             {schedule && (
               <p className="text-sm text-muted-foreground">
-                {formatListDate(start)} • {formatListTime(start)} - {formatListTime(end)}
+                {formatListDate(start)} • {formatListTime(start)} -{" "}
+                {formatListTime(end)}
               </p>
             )}
           </div>
@@ -171,7 +232,9 @@ const DoctorScheduleTables = ({ queryString }: { queryString: string }) => {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">My schedules</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            My schedules
+          </h1>
           <p className="text-sm text-muted-foreground">
             View your booked availability and add more future slots.
           </p>
@@ -221,7 +284,9 @@ const DoctorScheduleTables = ({ queryString }: { queryString: string }) => {
                         )}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {formatListDate(schedule.startDateTime)} • {formatListTime(schedule.startDateTime)} - {formatListTime(schedule.endDateTime)}
+                        {formatListDate(schedule.startDateTime)} •{" "}
+                        {formatListTime(schedule.startDateTime)} -{" "}
+                        {formatListTime(schedule.endDateTime)}
                       </p>
                     </div>
 
@@ -243,6 +308,124 @@ const DoctorScheduleTables = ({ queryString }: { queryString: string }) => {
         </Dialog>
       </div>
 
+      <Dialog
+        open={Boolean(viewingSchedule)}
+        onOpenChange={(open, details) => {
+          if (!open && details.reason === "close-press") {
+            setViewingSchedule(null);
+          }
+        }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Schedule details</DialogTitle>
+            <DialogDescription>
+              Review the details for this booked availability slot.
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingSchedule && (
+            <div className="space-y-4">
+              <div className="rounded-lg border bg-muted/30 p-4">
+                <p className="text-sm text-muted-foreground">Schedule</p>
+                <h3 className="mt-2 text-lg font-semibold text-foreground">
+                  {viewingSchedule.schedule
+                    ? formatScheduleRange(
+                        viewingSchedule.schedule.startDateTime,
+                        viewingSchedule.schedule.endDateTime,
+                      )
+                    : "Booked schedule"}
+                </h3>
+                {viewingSchedule.schedule && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {formatListDate(viewingSchedule.schedule.startDateTime)} •{" "}
+                    {formatListTime(viewingSchedule.schedule.startDateTime)} -{" "}
+                    {formatListTime(viewingSchedule.schedule.endDateTime)}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg border p-3">
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="mt-1 font-medium">
+                    {viewingSchedule.isBooked === false ? "Pending" : "Booked"}
+                  </p>
+                </div>
+                <div className="rounded-lg border p-3">
+                  <p className="text-sm text-muted-foreground">Booked on</p>
+                  <p className="mt-1 font-medium">
+                    {viewingSchedule.createdAt
+                      ? format(
+                          new Date(viewingSchedule.createdAt),
+                          "MMM dd, yyyy",
+                        )
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border p-3">
+                <p className="text-sm text-muted-foreground">Booked by</p>
+                <p className="mt-1 font-medium">
+                  {getBookedPersonName(viewingSchedule)}
+                </p>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(deletingSchedule)}
+        disablePointerDismissal={isCanceling}
+        onOpenChange={(open, details) => {
+          if (!open && details.reason === "close-press" && !isCanceling) {
+            setDeletingSchedule(null);
+            setDeleteError(null);
+          }
+        }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remove schedule</DialogTitle>
+            <DialogDescription>
+              This will cancel your booking for the selected schedule slot.
+            </DialogDescription>
+          </DialogHeader>
+
+          {deleteError && (
+            <p className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              {deleteError}
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isCanceling}
+              onClick={() => {
+                setDeletingSchedule(null);
+                setDeleteError(null);
+              }}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={!deletingSchedule || isCanceling}
+              onClick={() => {
+                if (deletingSchedule) {
+                  confirmCancelBooking(
+                    deletingSchedule.scheduleId ?? deletingSchedule.id,
+                  );
+                }
+              }}>
+              {isCanceling ? "Removing..." : "Remove schedule"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <DataTable
         data={doctorSchedules ?? []}
         columns={columns}
@@ -259,10 +442,8 @@ const DoctorScheduleTables = ({ queryString }: { queryString: string }) => {
         }}
         sorting={{ state: sorting, onSortingChange: handleSortingChange }}
         actions={{
-          onDelete: (schedule) =>
-            confirmCancelBooking(
-              schedule.scheduleId ?? schedule.id,
-            ),
+          onView: onViewSchedule,
+          onDelete: onDeleteSchedule,
         }}
       />
 
@@ -324,7 +505,9 @@ const DoctorScheduleTables = ({ queryString }: { queryString: string }) => {
       </div>
 
       {isCanceling && (
-        <p className="text-sm text-muted-foreground">Removing this schedule...</p>
+        <p className="text-sm text-muted-foreground">
+          Removing this schedule...
+        </p>
       )}
     </div>
   );

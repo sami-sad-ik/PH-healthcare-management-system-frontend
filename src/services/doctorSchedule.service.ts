@@ -20,6 +20,39 @@ export interface IDoctorSchedule {
       role?: string;
     };
   };
+  bookedBy?: {
+    id?: string;
+    name?: string;
+    user?: {
+      id?: string;
+      name?: string;
+    };
+  } | null;
+  patient?: {
+    id?: string;
+    name?: string;
+    user?: {
+      id?: string;
+      name?: string;
+    };
+  } | null;
+  appointment?: {
+    id?: string;
+    patient?: {
+      id?: string;
+      name?: string;
+      user?: {
+        id?: string;
+        name?: string;
+      };
+    } | null;
+  } | null;
+  user?: {
+    id?: string;
+    name?: string;
+    email?: string;
+    role?: string;
+  } | null;
 }
 
 export const getMyDoctorSchedules = async (queryString: string) => {
