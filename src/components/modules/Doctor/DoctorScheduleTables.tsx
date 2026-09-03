@@ -96,11 +96,11 @@ const DoctorScheduleTables = ({ queryString }: { queryString: string }) => {
     staleTime: 1000 * 60 * 60,
   });
 
-
   const allSchedules = useMemo(() => {
     if (!scheduleResponse) return [];
 
-    const candidate = (scheduleResponse as { data?: unknown })?.data ?? scheduleResponse;
+    const candidate =
+      (scheduleResponse as { data?: unknown })?.data ?? scheduleResponse;
 
     if (Array.isArray(candidate)) return candidate;
     if (candidate && typeof candidate === "object") {
@@ -128,7 +128,11 @@ const DoctorScheduleTables = ({ queryString }: { queryString: string }) => {
 
     return (allSchedules ?? []).filter((schedule: ISchedule) => {
       const startDate = new Date(schedule.startDateTime);
-      return !Number.isNaN(startDate.getTime()) && startDate >= now && !bookedScheduleIds.has(schedule.id);
+      return (
+        !Number.isNaN(startDate.getTime()) &&
+        startDate >= now &&
+        !bookedScheduleIds.has(schedule.id)
+      );
     });
   }, [allSchedules, bookedScheduleIds]);
 
@@ -153,7 +157,9 @@ const DoctorScheduleTables = ({ queryString }: { queryString: string }) => {
     },
     onError: (error) => {
       setBookingError(
-        error instanceof Error ? error.message : "Unable to book this schedule.",
+        error instanceof Error
+          ? error.message
+          : "Unable to book this schedule.",
       );
     },
   });
