@@ -2,6 +2,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DoctorDetailsData } from "@/components/modules/Admin/DoctorsManagement/DoctorDetails";
+import AppointmentBookingDialog from "@/components/modules/consultation/AppointmentBookingDialog";
 import {
   Award,
   CalendarDays,
@@ -23,8 +24,34 @@ const formatDate = (value: unknown) => {
   return Number.isNaN(date.getTime()) ? displayValue(value) : date.toLocaleDateString();
 };
 
+const formatTime = (value: unknown) => {
+  if (!value) return "Time not provided";
+  if (value instanceof Date) {
+    return value.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+
+  const text = String(value).trim();
+  if (/^\d{1,2}:\d{2}(:\d{2})?(\s?[AP]M)?$/i.test(text)) {
+    return text;
+  }
+
+  const date = new Date(text);
+  return Number.isNaN(date.getTime())
+    ? displayValue(value)
+    : date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+};
+
 const relationValue = (item: Record<string, unknown>, keys: string[]) =>
   keys.map((key) => item[key]).find((value) => value !== null && value !== undefined && value !== "");
+
+const scheduleValue = (item: Record<string, unknown>, keys: string[]) => {
+  const nestedSchedule = item.schedule;
+  if (nestedSchedule && typeof nestedSchedule === "object" && !Array.isArray(nestedSchedule)) {
+    return relationValue(item, keys) ?? relationValue(nestedSchedule as Record<string, unknown>, keys);
+  }
+
+  return relationValue(item, keys);
+};
 
 const DoctorProfile = ({ doctor }: DoctorProfileProps) => {
   const specialities = doctor.specialities ?? [];
@@ -64,7 +91,10 @@ const DoctorProfile = ({ doctor }: DoctorProfileProps) => {
         <div className="space-y-6">
           <div>
             <p className="text-sm font-medium text-primary">Doctor profile</p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight">About {doctor.name}</h2>
+            <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-3xl font-semibold tracking-tight">About {doctor.name}</h2>
+              <AppointmentBookingDialog doctorId={doctor.id} doctorName={doctor.name} schedules={schedules} />
+            </div>
             <div className="mt-4 flex flex-wrap gap-2">
               {specialities.length ? specialities.map((speciality) => (
                 <Badge key={speciality.id} variant="secondary">{speciality.title}</Badge>
@@ -92,9 +122,9 @@ const DoctorProfile = ({ doctor }: DoctorProfileProps) => {
           <CardHeader><CardTitle>Available schedules</CardTitle></CardHeader>
           <CardContent className="space-y-3">
             {schedules.length ? schedules.map((schedule, index) => (
-              <div key={String(schedule.id ?? index)} className="rounded-md border p-3 text-sm">
-                <p className="flex items-center gap-2 font-medium"><CalendarDays className="h-4 w-4 text-primary" />{formatDate(relationValue(schedule, ["date", "scheduleDate"]))}</p>
-                <p className="mt-2 flex items-center gap-2 text-muted-foreground"><Clock3 className="h-4 w-4" />{displayValue(relationValue(schedule, ["startTime", "start"]))} - {displayValue(relationValue(schedule, ["endTime", "end"]))}</p>
+              <div key={String(schedule.scheduleId ?? schedule.id ?? index)} className="rounded-md border p-3 text-sm">
+                <p className="flex items-center gap-2 font-medium"><CalendarDays className="h-4 w-4 text-primary" />{formatDate(scheduleValue(schedule, ["startDateTime", "date", "scheduleDate"]))}</p>
+                <p className="mt-2 flex items-center gap-2 text-muted-foreground"><Clock3 className="h-4 w-4" />{formatTime(scheduleValue(schedule, ["startDateTime", "startTime", "start"]))} - {formatTime(scheduleValue(schedule, ["endDateTime", "endTime", "end"]))}</p>
               </div>
             )) : <p className="text-sm text-muted-foreground">No schedules are currently available.</p>}
           </CardContent>

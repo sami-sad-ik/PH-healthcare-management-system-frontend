@@ -14,6 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BriefcaseBusiness, ChevronLeft, ChevronRight, LoaderCircle, Search, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import AppointmentBookingDialog from "@/components/modules/consultation/AppointmentBookingDialog";
 
 const DoctorCard = ({ doctor }: { doctor: IDoctor }) => {
   const router = useRouter();
@@ -38,7 +39,7 @@ const DoctorCard = ({ doctor }: { doctor: IDoctor }) => {
         <div className="mt-5 flex flex-wrap gap-1.5">{doctor.specialities?.length ? doctor.specialities.map(({ speciality }) => <Badge key={speciality.id} variant="secondary">{speciality.title}</Badge>) : <span className="text-sm text-muted-foreground">Speciality not provided</span>}</div>
         <dl className="mt-5 grid grid-cols-2 gap-3 border-t pt-4 text-sm"><div><dt className="text-muted-foreground">Experience</dt><dd className="mt-1 font-medium">{doctor.experience ?? 0} years</dd></div><div><dt className="text-muted-foreground">Consultation fee</dt><dd className="mt-1 font-medium">{doctor.appointmentFee ?? 0}</dd></div><div className="col-span-2 flex items-center gap-2 text-muted-foreground"><BriefcaseBusiness className="h-4 w-4" /><span className="truncate">{doctor.currentWorkingPlace || "Independent practice"}</span></div></dl>
       </CardContent>
-      <CardFooter className="p-5 pt-0"><Button className="w-full" disabled={isNavigating} onClick={handleViewDetails} aria-label={`View details for ${doctor.name}`}>{isNavigating ? <><LoaderCircle className="animate-spin" />Loading doctor...</> : "View doctor details"}</Button></CardFooter>
+      <CardFooter className="flex-col gap-2 p-5 pt-0"><Button className="w-full" disabled={isNavigating} onClick={handleViewDetails} aria-label={`View details for ${doctor.name}`}>{isNavigating ? <><LoaderCircle className="animate-spin" />Loading doctor...</> : "View doctor details"}</Button><AppointmentBookingDialog doctorId={doctor.id} doctorName={doctor.name} className="w-full" triggerLabel="Book appointment" /></CardFooter>
     </Card>
   );
 };
